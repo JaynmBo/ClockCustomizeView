@@ -6,12 +6,12 @@ Android 自定义View是高级进阶不可或缺的内容，日常工作中，�
 
 ## 二、实现效果
 
-### 效果图
+### 1、先看效果图
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200527170644942.gif#pic_center)
 
-![](https://imgkr.cn-bj.ufileos.com/63482f81-bc54-40a4-b0ad-c61946203647.gif)
 
-
-### 步骤分析
+### 2、下载地址：[点击下载](https://github.com/jaynm888/ClockCustomizeView.git)
+### 3、步骤分析
 
 实现以上效果，主要分为四个步骤：
 
@@ -41,8 +41,7 @@ private fun drawClock(canvas: Canvas, centerX: Float, centerY: Float) {
     canvas.drawCircle(centerX, centerY, radius, mPaint)
 }
 ```
-![](https://imgkr.cn-bj.ufileos.com/171418ce-d793-4582-bc26-93d024594cfd.png)
-
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200527164305615.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2pheW5t,size_16,color_FFFFFF,t_70#pic_center)
 
 ### 2、绘制刻度线
 
@@ -100,9 +99,8 @@ private fun drawClockScale(canvas: Canvas, centerX: Float, centerY: Float) {
 
 
 以上代码就完成了绘制刻度线的效果，下面插个题外话，第一次尝试在绘制刻度线的时候，表盘数字一并完成，后来发现数字如下图所示：
-![](https://imgkr.cn-bj.ufileos.com/268c99c3-4e35-4b2a-bba4-a6da04c07803.png)
-
-附上图表盘数字代码，如果对以上数字现象有更好解决方案的，请指导！
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200527164319409.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2pheW5t,size_16,color_FFFFFF,t_70#pic_center)
+不知道有没有小伙伴遇到同样的问题，附上图表盘数字代码，
 
 ```kotlin
 // 测量绘制数字
@@ -120,83 +118,77 @@ canvas.drawText(
 
 ### 3、绘制刻度数字
 
-由于第2步数字绘制有问题，所以采取了以下方式，个人觉得有些臃肿，如果有更简单的方式，请指教！
 
-根据12个数字，使用三角函数关系分别计算出文本的坐标位置（x，y），然后完成文本绘制。其中3/6/9/12这四个数字比较简单，只需要在**x轴或者y轴减去对应文本的宽或者高**。其余数字计算方式，下面用图解方式举例：
 
-![](https://imgkr.cn-bj.ufileos.com/2dcf10f8-9233-4852-add4-058a7d153188.png)
+### 4、绘制数字新方案
+热心网友指导我绘制数字新方案，真的是高手如云阿。
 
-以表盘数字2为例，因为表盘数字到圆心距离都是一样的（图上黑色斜线尺寸假设为h），
-
-所以此时：x = h*sin(60°)  y = h*cos(60°)
-
-**文本x轴位置 = centerX + x - 文本宽度**
-
-**文本y轴位置 = centerY + y - 文本高度**
+首先将坐标位置（0,0）设置到圆心位置，这步是在绘制外层圆的时候，已经设置了。这样的好处是后期减少很多计算的步骤，新方案已经在代码中更改！
 
 ```kotlin
+	canvas.translate(centerX, centerY)
+```
+
+主要是通过canvas几何变换方式，先将圆点平移到12点钟位置，然后逆时针旋转数字对应的角度，然后开始绘制数字文本。这样的话，绘制数字文本就和绘制刻度线可以一并完成，使得代码清晰很多。
+需要注意的是，记得在使用几何变换前后分别调用**canvas.restore()和canvas.restore()方法**。
+
+其中相关坐标计算方式：
+
+>**1、平移 y 轴距离 = - 半径 + 刻度线长度 + 刻度与文本间距 + 文本高度 / 2** 
+>（因为坐标原点在圆心，需要平移到12点钟位置，所以半径为负数）
+>**2、旋转角度 = - 6 * 数字大小**
+>**3、文本 x 轴距离 = 文本宽度 / 2 ；**
+>**4、文本 y 轴距离 = 文本高度 / 2 ；**
+
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200527164347315.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2pheW5t,size_16,color_FFFFFF,t_70#pic_center)
+
+
+附上绘制刻度线和文本的完整代码：
+```kotlin
 /**
- * 绘制表盘数字
+ * 绘制表盘刻度线和数字文本
  */
-private fun drawClockNumber(canvas: Canvas, centerX: Float, centerY: Float) {
-    var x = 0.0F // 数字x坐标
-    var y = 0.0F // 数字y坐标
-    // 设置画笔宽度
-    mPaint.strokeWidth = 1.0F
-    // 设置画笔实心风格
-    mPaint.style = Paint.Style.FILL
-
-    // 数字距离表盘边界距离：半径-刻度线长度-数字距离刻度线间距
-    var tempSpace = radius - scaleMax - mNumberSpace
-
-    // 遍历绘制表盘数字
-    for (num in 1..12) {
-        mPaint.getTextBounds((num).toString(), 0, (num).toString().length, mRect)
-        if (num == 1 || num == 2) {
-            x =
-                (centerX + tempSpace * sin(Math.toRadians(num * 30.0)) - mRect.width()).toFloat()
-            y =
-                (centerY - tempSpace * cos(Math.toRadians(num * 30.0)) + mRect.height()).toFloat()
-        } else if (num == 4 || num == 5) {
-            x =
-                (centerX + tempSpace * sin(Math.toRadians(num * 30.0)) - mRect.width()).toFloat()
-            y = (centerY - tempSpace * cos(Math.toRadians(num * 30.0))).toFloat()
-        } else if (num == 7 || num == 8) {
-            x = (centerX + tempSpace * sin(Math.toRadians(num * 30.0))).toFloat()
-            y = (centerY - tempSpace * cos(Math.toRadians(num * 30.0))).toFloat()
-        } else if (num == 10 || num == 11) {
-            x = (centerX + tempSpace * sin(Math.toRadians(num * 30.0))).toFloat()
-            y =
-                (centerY - tempSpace * cos(Math.toRadians(num * 30.0)) + mRect.height()).toFloat()
-        } else if (num == 3) {
-            x =
-                (centerX + tempSpace * sin(Math.toRadians(num * 30.0)) - mRect.width()).toFloat()
-            y =
-                (centerY - tempSpace * cos(Math.toRadians(num * 30.0)) + mRect.height() / 2).toFloat()
-        } else if (num == 6) {
-            x =
-                (centerX + tempSpace * sin(Math.toRadians(num * 30.0)) - mRect.width() / 2).toFloat()
-            y = (centerY - tempSpace * cos(Math.toRadians(num * 30.0))).toFloat()
-        } else if (num == 9) {
-            x = (centerX + tempSpace * sin(Math.toRadians(num * 30.0))).toFloat()
-            y =
-                (centerY - tempSpace * cos(Math.toRadians(num * 30.0)) + mRect.height() / 2).toFloat()
-        } else if (num == 12) {
-            x =
-                (centerX + tempSpace * sin(Math.toRadians(num * 30.0)) - mRect.width() / 2).toFloat()
-            y =
-                (centerY - tempSpace * cos(Math.toRadians(num * 30.0)) + mRect.height()).toFloat()
+private fun drawClockScale(canvas: Canvas) {
+    for (index in 1..60) {
+        // 刻度绘制以12点钟为准，每次将表盘旋转6°，后续绘制都以12点钟为基准绘制
+        canvas.rotate(6F, 0F, 0F)
+        // 绘制长刻度线
+        if (index % 5 == 0) {
+            // 设置长刻度画笔宽度
+            mPaint.strokeWidth = 4.0F
+            // 绘制刻度线
+            canvas.drawLine(0F, -radius, 0F, -radius + scaleMax, mPaint)
+            /** 绘制文本 **/
+            canvas.save()
+            // 设置画笔宽度
+            mPaint.strokeWidth = 1.0F
+            // 设置画笔实心风格
+            mPaint.style = Paint.Style.FILL
+            mPaint.getTextBounds(
+                (index / 5).toString(),
+                0,
+                (index / 5).toString().length,
+                mRect
+            )
+            canvas.translate(0F, -radius + mNumberSpace + scaleMax + (mRect.height() / 2))
+            canvas.rotate((index * -6).toFloat())
+            canvas.drawText(
+                (index / 5).toString(), -mRect.width() / 2.toFloat(),
+                mRect.height().toFloat() / 2, mPaint
+            )
+            canvas.restore()
         }
-
-        canvas.drawText(num.toString(), x, y, mPaint)
+        // 绘制短刻度线
+        else {
+            // 设置短刻度画笔宽度
+            mPaint.strokeWidth = 2.0F
+            canvas.drawLine(0F, -radius, 0F, -radius + scaleMin, mPaint)
+        }
     }
 }
 ```
 
-以上计算代码看起来很复杂，其实就是简单的正余弦函数，如果忘记三角函数的朋友，抓紧时间复习下，自定义View很多时候都会应用到三角函数相关知识。
-
-![](https://imgkr.cn-bj.ufileos.com/35107f4a-c06a-473b-9593-04859b6d924f.png)
-### 4、绘制指针
+### 5、绘制指针
 
 指针绘制具体分以下步骤：
 
@@ -280,9 +272,8 @@ private fun drawPointer(canvas: Canvas, centerX: Float, centerY: Float) {
 ```
 以上就已经完成表盘指针绘制工作，效果图如下：
 
-![](https://imgkr.cn-bj.ufileos.com/4c651629-05b9-4d03-b4b9-82c9e37a61ba.png)
-
-### 5、onMeasure测量View宽高
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200527164358620.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2pheW5t,size_16,color_FFFFFF,t_70#pic_center)
+### 6、onMeasure测量View宽高
 
 MeasureSpecMode有三个属性：**EXACTLY、AT_MOST、UNSPECIFIED**
 
@@ -354,3 +345,5 @@ override fun onDraw(canvas: Canvas) {
 看完文章，是不是觉得这个效果其实也很简单，案例中相关属性可以使用自定义属性，因为练习案例，所以这里在View中直接写死了，感兴趣的朋友可以使用自定义属性尝试实现。这个案例基本上将自定义View中Canvas、Paint常见的API方法以及onMeasure()测量方法都应用到了，算是一个上手练习自定义View的好案例，希望看完文章对你学习有所帮助！
 
 前文说过，保证每个自定义View初学者都能看懂，因为每行代码都会添加注释，如果没看懂的留言打我！！！
+
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200527164416919.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2pheW5t,size_16,color_FFFFFF,t_70#pic_center)
