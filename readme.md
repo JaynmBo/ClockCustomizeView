@@ -92,35 +92,7 @@ private fun drawClockScale(canvas: Canvas, centerX: Float, centerY: Float) {
 }
 ```
 
-
-
-
-
-
-
-以上代码就完成了绘制刻度线的效果，下面插个题外话，第一次尝试在绘制刻度线的时候，表盘数字一并完成，后来发现数字如下图所示：
-![在这里插入图片描述](https://img-blog.csdnimg.cn/20200527164319409.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2pheW5t,size_16,color_FFFFFF,t_70#pic_center)
-不知道有没有小伙伴遇到同样的问题，附上图表盘数字代码，
-
-```kotlin
-// 测量绘制数字
-mPaint.strokeWidth = 1.0F
-mPaint.style = Paint.Style.FILL
-mPaint.getTextBounds((index / 5).toString(), 0, (index / 5).toString().length, mRect)
-val width = mRect.width()
-canvas.drawText(
-    (index / 5).toString(),
-    centerX - mRect.width() / 2,
-    (centerY - radius + scaleMax + mRect.height() + 8),
-    mPaint
-)
-```
-
-### 3、绘制刻度数字
-
-
-
-### 4、绘制数字新方案
+### 3、绘制数字新方案
 热心网友指导我绘制数字新方案，真的是高手如云阿。
 
 首先将坐标位置（0,0）设置到圆心位置，这步是在绘制外层圆的时候，已经设置了。这样的好处是后期减少很多计算的步骤，新方案已经在代码中更改！
@@ -188,7 +160,7 @@ private fun drawClockScale(canvas: Canvas) {
 }
 ```
 
-### 5、绘制指针
+### 4、绘制指针
 
 指针绘制具体分以下步骤：
 
